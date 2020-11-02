@@ -6,8 +6,8 @@
 2. 使用 Redux DevTools Extension 查看 state 变化
 
 ## 示例程序 Counter
-来看一个小应用 [counter](https://codesandbox.io/s/github/reduxjs/redux-essentials-counter-example/tree/master/?from-embed)，可以点击加或减按钮来改变数字显示。虽然不大，但通过 action 的使用，展示了 React + Redux 应用的所有重要部分。  
-用官方 Redux 模板 create-react-app 来创建项目。这个项目开箱即用，使用标准的 Redux 应用框架，用 Redux Toolkit 创建 Redux store 和逻辑，用 React-Redux 连接 React 组件和 Redux store。  
+来看一个小应用 [counter](https://codesandbox.io/s/github/reduxjs/redux-essentials-counter-example/tree/master/?from-embed)，可以点击加或减按钮来改变数字显示。虽然不大，但其通过 action 的使用，展示了 React + Redux 应用的所有重要部分。  
+用官方 Redux 模板 create-react-app 来创建项目。这个项目开箱即用，使用了标准的 Redux 应用框架，用 Redux Toolkit 创建 Redux store 和逻辑，用 React-Redux 连接 React 组件和 Redux store。  
   
 	npx create-react-app redux-essentials-example --template redux
 
@@ -21,7 +21,7 @@
 	- index.js: 应用入口点
 	- App.js: 顶级 React 组件
 	- /app
-		-store.js: 创建 the Redux store 实例
+		- store.js: 创建 the Redux store 实例
 	- /features
 		- /counter
 			- Counter.js: React 组件，根据 counter 的特性显示 UI
@@ -41,7 +41,7 @@
 	})
 
 用 Redux Toolkit 中的 configureStore 创建 Redux store。 注意，configureStore 需要传入 reducer 参数。  
-应用会有很多特性，每个特性可能会对应各自的 reducer 函数。当调用 configureStore 时，会一股脑儿地把这些所有不同的 reducer 放到一个对象中(key-value)，再把这个对象传给 configureStore。这些 reducer 对象对应的 key，也就成了最终 state 值的 key。  
+应用会有很多特性，每个特性可能会对应各自的 reducer 函数。当调用 configureStore 时，会一股脑儿地把这些所有不同的 reducer 放到一个对象中(key-value)，再把这个对象传给 configureStore。这些 reducer 对象对应的 key，也就是最终 state 值的 key。  
 `features/counter/counterSlice.js` 文件中导出的默认函数 slice.reducer 函数，实现了 counter 的逻辑。可以在创建 store 的文件中引入 `counterReducer`(即slice.reducer) 函数。  
 当把 {counter: counterReducer} 对象传给 configureStore 函数时，其返回的 Redux state 对象就会包含 state.counter。之后，当接收到 dispatch 传过来的 action 时，counterReducer 函数就可以决定 state.counter 是否需要更新以及如何更新。  
 Redux 允许 store 自定义配置各种不同的插件("中间件middleware"和"增强器(enhancers)"。configureStore 函数会自动向 store 配置中加入几个中间件，以提供更好地开发者体验。同时为了让 Redux DevTools Extension 能够侦测到其内容，也做了一些额外的配置。
@@ -65,7 +65,7 @@ Redux 允许 store 自定义配置各种不同的插件("中间件middleware"和
 
 这样，state.users、state.posts 和 state.comments 都是 Redux state 的独立的切片。
 
-> ### 细节解释: reducer 和 state 结构
+> ### 详细解释: reducer 和 state 结构
 > Redux store 在创建时，得传入一个"根 reducer"函数。那么，如果有多个不同的 reducer 函数，该拿这个唯一的根 reducer 怎么办？如何定义 Redux store 的 state 内容呢？  
 > 如果手动逐个调用所有的切片 reducer，就像下面这样:
 
@@ -272,8 +272,8 @@ thunk 是一类特殊的 Redux 函数，可以容纳异步逻辑。编写 thunk 
 
 	store.dispatch(incrementAsync(5))
 
-注意，使用 thunk 需要在 Redux store 创建时传入 redux-thunk 中间件(一种 Redux 插件)。好在 Redux Toolkit 的 configureStore 函数已经自动完成了这个设置，因此在代码中直接使用就好，不必做额外的引入操作。  
-使用 AJAX 调用以从服务器获取数据时，可以把这个 AJAX 调用放到 thunk 中。下面这个示例把函数的定义展开，虽然比上面的示例长了不少，但可以搞清楚其定义过程:  
+注意，使用 thunk 需要在 Redux store 创建时传入 redux-thunk 中间件(一种 Redux 插件)。好在 Redux Toolkit 的 configureStore 函数会自动完成对 redux-thunk 中间件的设置，因此在代码中直接使用就好，直接使用 thunk 就好。  
+使用 AJAX 调用从服务器获取数据时，可以把相关的 AJAX 调用放到 thunk 中。下面这个示例把函数的定义展开，虽然下面的例子比上面的长了不少，但可以更好地搞清楚定义过程:  
 
 	{/*features/counter/counterSlice.js*/}
 
@@ -292,11 +292,21 @@ thunk 是一类特殊的 Redux 函数，可以容纳异步逻辑。编写 thunk 
 	  }
 	}
 
+在[第五章: 异步逻辑和数据获取](./ReduxEssentials05.md)中会了解 thunk 的使用。
 
-However, using thunks requires that the redux-thunk middleware (a type of plugin for Redux) be added to the Redux store when it's created. Fortunately, Redux Toolkit's configureStore function already sets that up for us automatically, so we can go ahead and use thunks here.
+> ### 详细解释: thunk 和异步逻辑
+> 我们知道，reducer 中不能有任何形式的异步逻辑。但有时异步逻辑的确是必须的。  
+> 要访问 Redux store，就得写些异步代码，并调用 store.dispatch():  
+	const store = configureStore({ reducer: counterReducer })
+	
+	setTimeout(() => {
+	  store.dispatch(increment())
+	}, 250)
 
-When you need to make AJAX calls to fetch data from the server, you can put that call in a thunk. Here's an example that's written a bit longer, so you can see how it's defined:
 
 
 
+Detailed Explanation: Thunks and Async Logic
+We know that we're not allowed to put any kind of async logic in reducers. But, that logic has to live somewhere.
 
+If we have access to the Redux store, we could write some async code and call store.dispatch() when we're done:

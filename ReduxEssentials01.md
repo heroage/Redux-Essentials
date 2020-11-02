@@ -27,7 +27,7 @@
     - [Redux DevTools Extension for Firefox](https://addons.mozilla.org/en-US/firefox/addon/reduxdevtools/)
 
 ## Redux 是什么
-Redux 是一个模式，也是一个库，通过名为 "actions" 的事件，来管理、更新应用程序的状态。它为全局 state 维护了一个中心化 store，以便贯穿整个应用的始终，通过规则确保只能以预先规定的方式更新 state。
+Redux 是一个模式，也是一个库，通过名为 "action" 的事件，来管理、更新应用程序的状态。它为全局 state 维护了一个中心化 store，以便贯穿整个应用的始终，通过规则确保只能以预先规定的方式更新 state。
 
 ### Redux 的必要性
 Redux 帮你管理"全局" state，这样 state 就可以根据需要在应用的各个部分便捷地共享。  
@@ -57,8 +57,8 @@ Redux 是独立的 JS 库，但通常也需要与其他包协同工作
       const [counter, setCounter] = useState(0)
     
       // Action: code that causes an update to the state when something happens
-      const increment = () ={
-        setCounter(prevCounter =prevCounter + 1)
+      const increment = () =>{
+        setCounter(prevCounter => prevCounter + 1)
       }
     
       // View: the UI definition
@@ -86,8 +86,8 @@ Redux 是独立的 JS 库，但通常也需要与其他包协同工作
 
 上面的一切看上去简单明了，但当复杂度增加，有多个组件需要共享相同的 state，尤其是这些组件分布在应用的不同部分时，这种简单性就被打破了。很多时候，需要通过"状态提升"来解决 state 共享的目的，但往往单纯的状态提升还不足以解决问题。
 解决问题的方案之一是，从组件中抽离需要共享的 state，把共享状态集中放到组件树外面的一个位置。如此这般，我们的组件树就成了一个大单纯的"view"，组件树中的任何组件都可以方便地到 state 的集中存放点去存取 state 或是触发 action。
-通过把 state 管理相关的概念进行定义和切割，同时为了维护 view 和 state 之间的独立性，制定了一些强制规则，这样使得我们的代码变得更具结构性和可维护性。
-这就是 Redux 背后的基本目的: 找个独立集中的地方存放应用的全局 state，同时依照规定的模式来更新 state，这样代码就更清晰，执行结果是确定的。
+通过定义和切割 state 管理的相关概念，同时为了维护 view 和 state 之间的独立性，制定了一些强制规则，这样使得我们的代码变得更具结构性和可维护性。
+这就是 Redux 背后的基本目的: 找个独立集中的地方存放应用的全局 state，同时依照规定的模式来更新 state，这样代码就更清晰，代码的执行结果也更易于预测。
 
 ### 不变性(Immutability)
 "Mutable"是"可变的"。那如果有东西是"immutable"的，那这东西就不能被改变。
@@ -135,13 +135,14 @@ Javascript 对象和数组默认都是可变的。即使创建一个 const 对�
     // and mutate the copy:
     arr3.push('c')
 Redux 希望所有的 state 更新都是不可变的。我们稍后就会看到在何处做，以及这一点的重要性，同时也有一些便捷地方法来实现不可变更新逻辑。   
+
 >延伸阅读  
 [A Visual Guide to References in JavaScript](https://daveceddia.com/javascript-references/)  
 [Immutability in React and Redux: The Complete Guide](https://daveceddia.com/react-redux-immutability-guide/)
 
 ## 术语
-### actions
-action 是一个普通的 JavaScript 对象，包含一个 type 字段。可以把 action 认为是一个事件，它描述了应用中发生的一些情形。
+### action
+action 是一个普通的 JavaScript 对象，包含一个 type 字段。可以把 action 认为是一个事件，它描述了应用中发生的一些情况。
 type 字段是字符串，其值给出了对 action 的描述性名称，诸如 "todos/todoAdded" 之类。我们通常会为 type 指定类似于 "domain/eventName" 的值，第一部分是 action 的特征或所属的分类，第二部分是发生的特定事件。
 action 对象可以用其他字段来描述发生的额外信息。习惯上，我们把这个字段定义为 "payload"。
 典型的 action 对象如下:  
@@ -151,10 +152,10 @@ action 对象可以用其他字段来描述发生的额外信息。习惯上，�
       payload: 'Buy milk'
     }
 
-### Action Creators
+### Action Creator
 actoin creator 是一个函数，用来创建并返回 action 对象。我们使用这些函数获取 action 对象，而不必每次都手工来写一遍 action 对象:  
 
-    const addTodo = text ={
+    const addTodo = text => {
       return {
         type: 'todos/todoAdded',
         payload: text
@@ -162,29 +163,29 @@ actoin creator 是一个函数，用来创建并返回 action 对象。我们使
     }
 
 ### Reducers
-reducer 是一个函数，接受当前状态和一个 action 对象作为参数，如果需要决定如何更新 state，并返回新 state。其函数原型为: (state, action) =newState。可以把 reducer 看做是一个事件监听器，它会根据接收到的 action(event) 类型对事件做相应的处理。
+reducer 是一个函数，接受当前状态和一个 action 对象作为参数，决定在需要时如何更新 state，并返回新 state。其函数原型为: (state, action) => newState。可以把 reducer 看做是一个事件监听器，它会根据接收到的 action(事件) 类型对事件做相应的处理。
 
 > "reducer" 函数之所以得名，是因为其原型跟传给 Array.reduce() 方法的回调函数类似。
 
 
 
 reducer 必须遵循以下特定规则:
-   
-- 只根据取得的 state 和 action 参数计算新的状态，而与其他因素无关(即必须是纯函数)  
-- 不得直接修改现有状态。即只能做不可变更新，需生成与现有状态相等的新状态对象，然后根据业务逻辑修改新状态对象
-- 不能在函数内执行异步逻辑、计算随机值，或其他会造成"副作用"的操作
+
+- 只根据当前取得的 state 和 action 参数计算新的状态，而与其他因素无关(即必须是纯函数)  
+- 不得直接修改当前状态。即只能做不可变更新，需生成与当前状态相等的新状态对象，然后根据业务逻辑修改新状态对象
+- 不能在 reducer 内执行异步逻辑、计算随机值，或其他会造成"副作用"的操作
 
 > 副作用  
 > 如果一个函数修改了自己范围之外的资源，那就叫做有副作用，反之，就是没有副作用。
 
-稍后会继续讨论 reducer 规则，包括其重要的原因，以及如何正确地执行这些规则。  
+稍后会继续讨论 reducer 规则，包括其为何如此重要，以及如何正确地遵从这些规则。  
 reducer 函数中的逻辑通常遵循以下步骤:  
 
-- 检查 reducer 是否要处理这个 action
-	- 如果要处理这个 action，就复制 state 得到新的状态对象，更新新对象中的对应值后，将新对象作为返回值返回
+- 检查 reducer 是否需要处理这个 action
+	- 如果需要处理这个 action，就复制当前 state 得到新的状态对象，然后更新新对象中的值后，返回新对象作为新状态
 - 直接返回现有 state
 
-下面是一个 reducer 的示例，诈尸了每个 reducer 应遵循的步骤:
+下面是一个 reducer 的示例，演示了 reducer 应遵循的步骤:
 
 	const initialState = { value: 0 }
 
@@ -231,8 +232,8 @@ reducer 函数中可以使用 if/else、switch、loops 在内的任何逻辑
 	console.log(total)
 	// 15
 
-> 注意，addNumber 函数是一个 reduce 回调函数，函数本身不必关心遍历过程。函数接受 previousResult 和 currentItem 这两个参数，运算后返回新的结果值。
-> Redux reducer 函数与 reduce 回调函数完全相同。它也接受两个参数，一个是"之前的结果"(即 state)，另一个是"当前项"(即 action 对象)，这两个参数决定了新 state 值，函数也返回这个新 state 值。
+> 注意，addNumber 函数是一个 reduce 回调函数，addNumber 函数本身不必关心遍历过程。函数接受 previousResult 和 currentItem 这两个参数，运算后返回新的结果值。
+> Redux reducer 函数与 reduce 回调函数完全相同。它也接受两个参数，一个是"之前的结果"(即 state)，另一个是"当前项"(即 action 对象)，这两个参数决定了新 state 值，reducer 函数也返回这个新 state 值。
 > 如果创建一个 Redux action 数组，然后将一个 Redux reducer 传给 Array.reduce()，也同样能得到最终结果:
 
 	const actions = [
@@ -262,7 +263,7 @@ reducer 函数中可以使用 if/else、switch、loops 在内的任何逻辑
 	// {value: 0}
 
 ### Dispatch
-Redux store 有一个名为 dispatch 的方法。更新 state 的唯一方法就是调用 store.dispatch()，并把 action 对象作为参数传给 dispatch 方法。接下来，store 会运行相应的 reducer 函数，并在内部保存新的 state 值，最后，可以用 getState() 方法取得更新后的 state 值:
+Redux store 有一个名为 dispatch 的方法。更新 state 的唯一方法就是调用 store.dispatch()，并把 action 对象作为参数传给 dispatch 方法。接下来，store 会运行其 reducer 函数，并在内部保存新的 state 值，之后，可以用 getState() 方法取得更新后的 state 值:
 
 	store.dispatch({ type: 'counter/increment' })
 	
@@ -283,8 +284,8 @@ Redux store 有一个名为 dispatch 的方法。更新 state 的唯一方法就
 	console.log(store.getState())
 	// {value: 2}
 
-### Selectors
-selector 是一个函数，用以展开并返回 store 中的需要的 state 值。当应用变大时，应用这个函数可以避免在应用的不同部分，重复编写读取同一数据的逻辑代码。
+### Selector
+selector 是一个函数，用以提取并返回 store 中 state 的特定信息。当应用变大时，应用这个函数可以避免在应用的不同部分，重复编写读取同一数据的逻辑代码。
 
 	const selectCounterValue = state => state.value
 	
@@ -304,14 +305,14 @@ selector 是一个函数，用以展开并返回 store 中的需要的 state 值
 
 - 初始化设置:
 	- 创建 Redux store 时，以根 reducer 函数作为参数传入
-	- store 一旦调用了根 reducer，就以返回值作为其初始状态
-	- 当第一次渲染 UI 时，UI 组件就会访问 Redux store 的当前 state，使用其中的数据进行渲染。UI 组件会 subscribe 相关的 store 更新，以便在 state 更新时获取通知。
+	- store 一旦调用了根 reducer，就保存根 reducer 的返回值作为其初始状态
+	- 当第一次渲染 UI 时，UI 组件会访问 Redux store 的当前 state，使用其中的数据进行渲染。UI 组件会 subscribe 相关的 store 更新，以便在 state 更新时获取通知。
 - 更新:
 	- 应用事件发生，诸如点击按钮之类
 	- 应用代码 dispatch action 到 Redux store ，诸如 dispatch({type: 'counter/increment'}) 之类
-	- store 运行 reducer 函数，一遍遍地传入 previous state 和 current action，并将得到的新 state 作为函数返回值返回
+	- store 运行 reducer 函数，一遍遍地传入 previous state 和 current action，并返回计算得到的新 state
 	- store 通知所有 subscribe 了 store 更新的所有 UI 组件
-	- 每个 UI 组件主动向 store 要求检查其需要的 state 数据是否已经发生改变
+	- 得到更新通知的每个 UI 组件，主动向 store 要求检查其需要的 state 数据是否已经发生改变
 	- 每个发现数据已经改变的组件，强制用新数据重新渲染，然后更新结果就呈现在屏幕上了
 
 
