@@ -52,22 +52,24 @@ Redux 是独立的 JS 库，但通常也需要与其他包协同工作
 先看一个 React counter 组件。其组件状态跟踪了一个数字，按下按钮，数字会加1:
 
 
-    function Counter() {
-      // State: a counter value
-      const [counter, setCounter] = useState(0)
-    
-      // Action: code that causes an update to the state when something happens
-      const increment = () =>{
-        setCounter(prevCounter => prevCounter + 1)
-      }
-    
-      // View: the UI definition
-      return (
-        <div>
-          Value: {counter} <button onClick={increment}>Increment</button>
-        </div>
-      )
-    }
+```javascript
+function Counter() {
+  // State: a counter value
+  const [counter, setCounter] = useState(0)
+
+  // Action: code that causes an update to the state when something happens
+  const increment = () =>{
+    setCounter(prevCounter => prevCounter + 1)
+  }
+
+  // View: the UI definition
+  return (
+    <div>
+      Value: {counter} <button onClick={increment}>Increment</button>
+    </div>
+  )
+}
+```
 这是一个自包含的应用，可分为以下几部分:
 
 1. state，是驱动应用的本源
@@ -75,7 +77,7 @@ Redux 是独立的 JS 库，但通常也需要与其他包协同工作
 3. actions，应用中的事件基于用户输入，输入触发 state 更新
 
 
-  
+
 下图是"单向数据流"的一个简单示例:
 ![单向数据流](./images/part1-one-way-data-flow.png)
 
@@ -93,47 +95,51 @@ Redux 是独立的 JS 库，但通常也需要与其他包协同工作
 "Mutable"是"可变的"。那如果有东西是"immutable"的，那这东西就不能被改变。
 Javascript 对象和数组默认都是可变的。即使创建一个 const 对象，也可以改变其中字段的内容。
 
-    const obj = { a: 1, b: 2 }
-    // still the same object outside, but the contents have changed
-    obj.b = 3
-    
-    const arr = ['a', 'b']
-    // In the same way, we can change the contents of this array
-    arr.push('c')
-    arr[1] = 'd'
+```javascript
+const obj = { a: 1, b: 2 }
+// still the same object outside, but the contents have changed
+obj.b = 3
+
+const arr = ['a', 'b']
+// In the same way, we can change the contents of this array
+arr.push('c')
+arr[1] = 'd'
+```
 
 以上的例子就叫做可变对象或可变数组。就是说，内存中对象或数组的引用没有改变，但其中的内容已经改变。
 要以不可变方式更新值，代码就得复制现有的对象/数组，然后修改新复制的对象/数组。
 我们可以简单地使用 JavaScript 的数组/对象展开(...)运算符，这样就可以得到原来数组/对象的新副本，而不是原数组/对象的引用。
 
-    const obj = {
-      a: {
-        // To safely update obj.a.c, we have to copy each piece
-        c: 3
-      },
-      b: 2
-    }
-    
-    const obj2 = {
-      // copy obj
-      ...obj,
-      // overwrite a
-      a: {
-        // copy obj.a
-        ...obj.a,
-        // overwrite c
-        c: 42
-      }
-    }
-    
-    const arr = ['a', 'b']
-    // Create a new copy of arr, with "c" appended to the end
-    const arr2 = arr.concat('c')
-    
-    // or, we can make a copy of the original array:
-    const arr3 = arr.slice()
-    // and mutate the copy:
-    arr3.push('c')
+```javascript
+const obj = {
+  a: {
+    // To safely update obj.a.c, we have to copy each piece
+    c: 3
+  },
+  b: 2
+}
+
+const obj2 = {
+  // copy obj
+  ...obj,
+  // overwrite a
+  a: {
+    // copy obj.a
+    ...obj.a,
+    // overwrite c
+    c: 42
+  }
+}
+
+const arr = ['a', 'b']
+// Create a new copy of arr, with "c" appended to the end
+const arr2 = arr.concat('c')
+
+// or, we can make a copy of the original array:
+const arr3 = arr.slice()
+// and mutate the copy:
+arr3.push('c')
+```
 Redux 希望所有的 state 更新都是不可变的。我们稍后就会看到在何处做，以及这一点的重要性，同时也有一些便捷地方法来实现不可变更新逻辑。   
 
 >延伸阅读  
@@ -147,20 +153,24 @@ type 字段是字符串，其值给出了对 action 的描述性名称，诸如 
 action 对象可以用其他字段来描述发生的额外信息。习惯上，我们把这个字段定义为 "payload"。
 典型的 action 对象如下:  
 
-    const addTodoAction = {
-      type: 'todos/todoAdded',
-      payload: 'Buy milk'
-    }
+```javascript
+const addTodoAction = {
+  type: 'todos/todoAdded',
+  payload: 'Buy milk'
+}
+```
 
 ### Action Creator
 actoin creator 是一个函数，用来创建并返回 action 对象。我们使用这些函数获取 action 对象，而不必每次都手工来写一遍 action 对象:  
 
-    const addTodo = text => {
-      return {
-        type: 'todos/todoAdded',
-        payload: text
-      }
-    }
+```javascript
+const addTodo = text => {
+  return {
+    type: 'todos/todoAdded',
+    payload: text
+  }
+}
+```
 
 ### Reducers
 reducer 是一个函数，接受当前状态和一个 action 对象作为参数，决定在需要时如何更新 state，并返回新 state。其函数原型为: (state, action) => newState。可以把 reducer 看做是一个事件监听器，它会根据接收到的 action(事件) 类型对事件做相应的处理。
@@ -187,21 +197,23 @@ reducer 函数中的逻辑通常遵循以下步骤:
 
 下面是一个 reducer 的示例，演示了 reducer 应遵循的步骤:
 
-	const initialState = { value: 0 }
+```javascript
+const initialState = { value: 0 }
 
-	function counterReducer(state = initialState, action) {
-	  // Check to see if the reducer cares about this action
-	  if (action.type === 'counter/increment') {
-	    // If so, make a copy of `state`
-	    return {
-	      ...state,
-	      // and update the copy with the new value
-	      value: state.value + 1
-	    }
-	  }
-	  // otherwise return the existing state unchanged
-	  return state
-	}
+function counterReducer(state = initialState, action) {
+  // Check to see if the reducer cares about this action
+  if (action.type === 'counter/increment') {
+    // If so, make a copy of `state`
+    return {
+      ...state,
+      // and update the copy with the new value
+      value: state.value + 1
+    }
+  }
+  // otherwise return the existing state unchanged
+  return state
+}
+```
 
 reducer 函数中可以使用 if/else、switch、loops 在内的任何逻辑
 
@@ -215,38 +227,42 @@ reducer 函数中可以使用 if/else、switch、loops 在内的任何逻辑
 > 数组第一次遍历，回调函数被调用时，previousResult 是没有值的，因此需要传给它一个初始值，以便回调函数能正常调用。
 > 下面的代码演示了如何用 reduce 回调函数实现数组值的累加:
 
-	const numbers = [2, 5, 8]
-	
-	const addNumbers = (previousResult, currentItem) => {
-	  console.log({ previousResult, currentItem })
-	  return previousResult + currentItem
-	}
-	
-	const initialValue = 0
-	
-	const total = numbers.reduce(addNumbers, initialValue)
-	// {previousResult: 0, currentItem: 2}
-	// {previousResult: 2, currentItem: 5}
-	// {previousResult: 7, currentItem: 8}
-	
-	console.log(total)
-	// 15
+```javascript
+const numbers = [2, 5, 8]
+
+const addNumbers = (previousResult, currentItem) => {
+  console.log({ previousResult, currentItem })
+  return previousResult + currentItem
+}
+
+const initialValue = 0
+
+const total = numbers.reduce(addNumbers, initialValue)
+// {previousResult: 0, currentItem: 2}
+// {previousResult: 2, currentItem: 5}
+// {previousResult: 7, currentItem: 8}
+
+console.log(total)
+// 15
+```
 
 > 注意，addNumber 函数是一个 reduce 回调函数，addNumber 函数本身不必关心遍历过程。函数接受 previousResult 和 currentItem 这两个参数，运算后返回新的结果值。
 > Redux reducer 函数与 reduce 回调函数完全相同。它也接受两个参数，一个是"之前的结果"(即 state)，另一个是"当前项"(即 action 对象)，这两个参数决定了新 state 值，reducer 函数也返回这个新 state 值。
 > 如果创建一个 Redux action 数组，然后将一个 Redux reducer 传给 Array.reduce()，也同样能得到最终结果:
 
-	const actions = [
-	  { type: 'counter/increment' },
-	  { type: 'counter/increment' },
-	  { type: 'counter/increment' }
-	]
-	
-	const initialState = { value: 0 }
-	
-	const finalResult = actions.reduce(counterReducer, initialState)
-	console.log(finalResult)
-	// {value: 3}
+```javascript
+const actions = [
+  { type: 'counter/increment' },
+  { type: 'counter/increment' },
+  { type: 'counter/increment' }
+]
+
+const initialState = { value: 0 }
+
+const finalResult = actions.reduce(counterReducer, initialState)
+console.log(finalResult)
+// {value: 3}
+```
 
 > 可以说 Redux reducer 将一堆 action 缩减(reduce)到一个唯一的状态。二者的不同在于，Array.reduce() 一次性完成缩减，而 Redux reducer 则需要在应用程序的整个生命周期中不断执行。
 
@@ -255,43 +271,51 @@ reducer 函数中可以使用 if/else、switch、loops 在内的任何逻辑
 创建 store 需要传进 reducer 作为参数，其 getState 方法返回当前 state 值
 
 
-	import { configureStore } from '@reduxjs/toolkit'
-	
-	const store = configureStore({ reducer: counterReducer })
-	
-	console.log(store.getState())
-	// {value: 0}
+```javascript
+import { configureStore } from '@reduxjs/toolkit'
+
+const store = configureStore({ reducer: counterReducer })
+
+console.log(store.getState())
+// {value: 0}
+```
 
 ### Dispatch
 Redux store 有一个名为 dispatch 的方法。更新 state 的唯一方法就是调用 store.dispatch()，并把 action 对象作为参数传给 dispatch 方法。接下来，store 会运行其 reducer 函数，并在内部保存新的 state 值，之后，可以用 getState() 方法取得更新后的 state 值:
 
-	store.dispatch({ type: 'counter/increment' })
-	
-	console.log(store.getState())
-	// {value: 1}
+```javascript
+store.dispatch({ type: 'counter/increment' })
+
+console.log(store.getState())
+// {value: 1}
+```
 
 在应用中，可以把 dispatch action 看做"触发事件"，而 store 需要通过 action 了解发生事件的信息。reducer 的作用类似于事件监听器，当它们监听到需要它们处理的 action，它们会在反馈中返回更新的状态。  
 通常调用 action creator 来 dispatch 相应的 action:
 
-	const increment = () => {
-	  return {
-	    type: 'counter/increment'
-	  }
-	}
-	
-	store.dispatch(increment())
-	
-	console.log(store.getState())
-	// {value: 2}
+```javascript
+const increment = () => {
+  return {
+    type: 'counter/increment'
+  }
+}
+
+store.dispatch(increment())
+
+console.log(store.getState())
+// {value: 2}
+```
 
 ### Selector
 selector 是一个函数，用以提取并返回 store 中 state 的特定信息。当应用变大时，应用这个函数可以避免在应用的不同部分，重复编写读取同一数据的逻辑代码。
 
-	const selectCounterValue = state => state.value
-	
-	const currentValue = selectCounterValue(store.getState())
-	console.log(currentValue)
-	// 2
+```javascript
+const selectCounterValue = state => state.value
+
+const currentValue = selectCounterValue(store.getState())
+console.log(currentValue)
+// 2
+```
 
 ### Redux Application Data Flow
 前面回顾 React 概念时，曾提到过"单向数据流"，它描述了 application state 更新的先后次序:
@@ -322,7 +346,7 @@ selector 是一个函数，用以提取并返回 store 中 state 的特定信息
 
 ## 总结
 Redux 有大量的新术语和概念需要记住。前面提到的相关内容总结如下:  
-  
+
 - Redux 是一个库，用以管理应用的全局状态
 	- React-Redux 库将 Redux 和 React 整合到一起
 	- 建议使用 Redux Toolkit 编写 Redux 逻辑
