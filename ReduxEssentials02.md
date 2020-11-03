@@ -309,6 +309,11 @@ thunk 是一类特殊的 Redux 函数，其中可以容纳异步逻辑。编写 
 // It can be dispatched like a regular action: `dispatch(incrementAsync(10))`.
 // This will call the thunk with the `dispatch` function as the first argument.
 // Async code can then be executed and other actions can be dispatched
+// 下面的函数称为 thunk，我们可以在其中执行异步逻辑。
+// 这个函数可以像普通的 action 一样被 dispatch: `dispatch(incrementAsync(10))`。
+// 代码中把需要调用的 thunk 作为 `dispatch` 函数的第一个参数。
+// 这样就可以用 dispatch 执行异步代码了，接着就可以继续 dispatch 其他 action，
+// 而不必等待异步代码执行结束
 export const incrementAsync = amount => dispatch => {
   setTimeout(() => {
     dispatch(incrementByAmount(amount))
@@ -322,7 +327,7 @@ export const incrementAsync = amount => dispatch => {
 store.dispatch(incrementAsync(5))
 ```
 
-注意，使用 thunk 需要在 Redux store 创建时传入 redux-thunk 中间件(一种 Redux 插件)。还好，Redux Toolkit 的 configureStore 函数会自动完成对 redux-thunk 中间件的设置，因此在代码中直接使用就好。  
+注意，使用 thunk 需要在 Redux store 创建时传入 redux-thunk 中间件(一种 Redux 插件)。还好，Redux Toolkit 的 configureStore 函数会自动完成对 redux-thunk 中间件的相关设置，因此在代码中直接使用就好。  
 使用 AJAX 调用从服务器获取数据时，可以把相关的 AJAX 调用放到 thunk 中。下面这个示例把函数的定义展开，虽然下面的例子比上面的长了不少，但可以更好地搞清楚定义过程:  
 
 ```javascript
@@ -347,20 +352,54 @@ const fetchUserById = userId => {
 在[第五章: 异步逻辑和数据获取](./ReduxEssentials05.md)中会了解 thunk 的使用。
 
 > ### 详细解释: thunk 和异步逻辑
-> 我们知道，reducer 中不能有任何形式的异步逻辑。但有时异步逻辑的确是必须的。  
-> 要访问 Redux store，就得写些异步代码，并调用 store.dispatch():  
+> 我们知道，reducer 中不能有任何形式的异步逻辑。但有时又必须需要调用异步逻辑。  
+> 如果可以访问 Redux store，这样通过异步方式调用 store.dispatch():  
+	
+	```javascript
 	const store = configureStore({ reducer: counterReducer })
+	
+	setTimeout(() => {
+	  store.dispatch(increment())
+	}, 250)
+	```
+	
+	但在真实的Redux 应用中，是不允许把 store 引入到其他文件中的，尤其不能在 React 组建文件中引入 store。因为这样，会造成代码更难以测试和复用。
+	
+	另外，常常还需要为某些 store 写些异步逻辑，如果运行将 store 引入到其他文件中，最终根本没法分清引用的是哪个 store。
+	
+	Redux store 可以用"中间件"拓展，中间件是一种可以加入额外功能的 add-on 或插件。使用中间件最常见的原因就是，需要在代码中使用异步逻辑的同时，还能跟 store 继续通信。中间件的使用还可以改变 store，使其调用 `dispatch()` 时，不仅可以以普通的 action 对象为参数，还可以使用函数或是 Promise 作为参数。
+	
+	Redux Thunk 中间件通过修改 store 后，就可以将函数传给 `dispatch`。实际上，这个中间件真的很短，直接贴在下面:
+	
+	```javascript
+	const thunkMiddleware = ({ dispatch, getState }) => next => action => {
+	  if (typeof action === 'function') {
+	    return action(dispatch, getState, extraArgument)
+	  }
+	  return next(action)
+	}
+	```
+	
+	中间件会检查传给 dispatch 的 "action" 是函数还是一个普通对象。如果是函数，则调用该函数，并返回结果。否则，认为 action 参数是一个 action 对象，就继续将其向前传递给 store。
+	
+	这为我们提供了一种编写任何同步或异步代码的方法，而同时仍然可以访问 `dispatch` 和 `getState`。
 
-```javascript
-setTimeout(() => {
-  store.dispatch(increment())
-}, 250)
-```
+这个文件(counterSlice.js)中还有一个函数，等到研究 `<Counter>` UI 组件时，再稍作讨论。
+
+> 相关材料
+>
+> [the Redux Thunk docs](https://github.com/reduxjs/redux-thunk)
+>
+> [What the heck is a thunk?](https://daveceddia.com/what-is-a-thunk/)
+>
+>  [Redux FAQ entry on "why do we use middleware for async?"](https://redux.js.org/faq/actions#how-can-i-represent-side-effects-such-as-ajax-calls-why-do-we-need-things-like-action-creators-thunks-and-middleware-to-do-async-behavior)
 
 
 
+There's one more function in this file, but we'll talk about that in a minute when we look at the `<Counter>` UI component.
 
-Detailed Explanation: Thunks and Async Logic
-We know that we're not allowed to put any kind of async logic in reducers. But, that logic has to live somewhere.
 
-If we have access to the Redux store, we could write some async code and call store.dispatch() when we're done:
+
+It looks to see if the "action" that was passed into `dispatch` is actually a function instead of a plain action object. If it's actually a function, it calls the function, and returns the result. Otherwise, since this must be an action object, it passes the action forward to the store.
+
+This gives us a way to write whatever sync or async code we want, while still having access to `dispatch` and `getState`.
