@@ -354,7 +354,7 @@ const fetchUserById = userId => {
 > ### 详细解释: thunk 和异步逻辑
 > 我们知道，reducer 中不能有任何形式的异步逻辑。但有时又必须需要调用异步逻辑。  
 > 如果可以访问 Redux store，这样通过异步方式调用 store.dispatch():  
-	
+
 	```javascript
 	const store = configureStore({ reducer: counterReducer })
 	
@@ -384,7 +384,7 @@ const fetchUserById = userId => {
 	
 	这为我们提供了一种编写任何同步或异步代码的方法，而同时仍然可以访问 `dispatch` 和 `getState`。
 
-这个文件(counterSlice.js)中还有一个函数，等到研究 `<Counter>` UI 组件时，再稍作讨论。
+这个文件(counterSlice.js)中还有一个函数没有讲到，等到研究 `<Counter>` UI 组件时，再顺带说一句就行。
 
 > 相关材料
 >
@@ -396,10 +396,70 @@ const fetchUserById = userId => {
 
 
 
-There's one more function in this file, but we'll talk about that in a minute when we look at the `<Counter>` UI component.
+### React Counter 组件
+
+之前我们见过独立的 React `<Counter>`如何运作。其实 React+Redux 应用类似于 `<Counter>`组件，只有稍许不同。
+
+下面来看下 `Counter.js`组件文件:
+
+```javascript
+{/* features/counter/Counter.js */}
+
+import React, { useState } from 'react'
+import { useSelector, useDispatch } from 'react-redux'
+import {
+  decrement,
+  increment,
+  incrementByAmount,
+  incrementAsync,
+  selectCount
+} from './counterSlice'
+import styles from './Counter.module.css'
+
+
+export function Counter() {
+  const count = useSelector(selectCount)
+  const dispatch = useDispatch()
+  const [incrementAmount, setIncrementAmount] = useState('2')
+  return (
+    <div>
+      <div className={styles.row}>
+        <button
+          className={styles.button}
+          aria-label="Increment value"
+          onClick={() => dispatch(increment())}
+        \>
+          +
+        </button>
+        <span className={styles.value}>{count}</span>
+        <button
+          className={styles.button}
+          aria-label="Decrement value"
+          onClick={() => dispatch(decrement())}
+        \>
+          \-
+        </button>
+      </div>
+      {/* omit additional rendering output here */}
+    </div>
+  )
+}
+```
+
+就像之前的普通 React 实例一样，文件中包含一个函数组件名为`Counter`，其中存储了 useState hook 的一些数据。
 
 
 
-It looks to see if the "action" that was passed into `dispatch` is actually a function instead of a plain action object. If it's actually a function, it calls the function, and returns the result. Otherwise, since this must be an action object, it passes the action forward to the store.
 
-This gives us a way to write whatever sync or async code we want, while still having access to `dispatch` and `getState`.
+
+
+
+Like with the earlier plain React example, we have a function component called `Counter`, that stores some data in a `useState` hook.
+
+However, in our component, it doesn't look like we're storing the actual current counter value as state. There *is* a variable called `count`, but it's not coming from a `useState` hook.
+
+While React includes several built-in hooks like `useState` and `useEffect`, other libraries can create their own [custom hooks](https://reactjs.org/docs/hooks-custom.html) that use React's hooks to build custom logic.
+
+The [React-Redux library](https://react-redux.js.org/) has [a set of custom hooks that allow your React component to interact with a Redux store](https://react-redux.js.org/api/hooks).
+
+#### 
