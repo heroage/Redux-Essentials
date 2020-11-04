@@ -446,7 +446,9 @@ export function Counter() {
 }
 ```
 
-就像之前的普通 React 实例一样，文件中包含一个函数组件名为`Counter`，其中存储了 useState hook 的一些数据。
+就像之前的普通 React 实例一样，文件中包含一个函数组件，名为`Counter`，它在 useState hook 中存了些数据。
+
+但看上去我们的组件好像没有把真实的当前 couter 值作为  state 来存储。代码中有个名为`count`的 变量，但这个变量并非源自`useState`  hook。
 
 
 
