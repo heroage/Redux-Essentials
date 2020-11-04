@@ -448,9 +448,11 @@ export function Counter() {
 
 就像之前的普通 React 实例一样，文件中包含一个函数组件，名为`Counter`，它在 useState hook 中存了些数据。
 
-但看上去我们的组件好像没有把真实的当前 couter 值作为  state 来存储。代码中有个名为`count`的 变量，但这个变量并非源自`useState`  hook。
+但看上去我们的组件好像没有把实际的当前 couter 值作为  state 来存储。代码中有个名为`count`的 变量，但这个变量并非源自`useState`  hook。
 
+而 React 中包含几个内置 hook，诸如 `useState`和`useEffect`之类，其他库可以创建他们自己的[自定义 hook](https://reactjs.org/docs/hooks-custom.html) 使用 React hook 来构建自定义逻辑。
 
+[React-Redux 库](https://react-redux.js.org/)就有一系列自定义的 [hook](https://react-redux.js.org/api/hooks) 以便 React 组件可以与 Redux store 交互。
 
 
 
