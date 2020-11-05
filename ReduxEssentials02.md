@@ -452,18 +452,137 @@ export function Counter() {
 
 而 React 中包含几个内置 hook，诸如 `useState`和`useEffect`之类，其他库可以创建他们自己的[自定义 hook](https://reactjs.org/docs/hooks-custom.html) 使用 React hook 来构建自定义逻辑。
 
-[React-Redux 库](https://react-redux.js.org/)就有一系列自定义的 [hook](https://react-redux.js.org/api/hooks) 以便 React 组件可以与 Redux store 交互。
+[React-Redux 库](https://react-redux.js.org/)就有一套自定义的 [hook](https://react-redux.js.org/api/hooks) 以便 React 组件可以与 Redux store 交互。
+
+### 使用 `useSelector` 读取数据
+
+首先，`useSelector` hook 可以让组件从 Redux store 的 state 中提取任何数据。
+
+之前我们编写了 "selector" 函数，`state`是其参数，并返回 state 值的一部分。
+
+`counterSlice.js` 就有这样一个 selector 函数:
+
+```javascript
+{/* features/counter/counterSlice.js */}
+
+// The function below is called a selector and allows us to select a value from
+// the state. Selectors can also be defined inline where they're used instead of
+// in the slice file. For example: `useSelector((state) => state.counter.value)`
+export const selectCount = state => state.counter.value
+```
+
+如果能够访问到 Redux store，就可以得到当前 couter 值:
+
+```javascript
+const count = selectCount(store.getState())
+console.log(count)
+// 0
+```
+
+我们的组件无法直接与 Redux store 通信，这是因为我们不允许将 Redux 引入到组件文件中。`useSelector`会在幕后负责与 Redux store 通信。如果在组件文件中向 userSelector 传入一个 selector 函数(someSelector)，userSelector 就可以在组件中调用 `someSelector(store.getState())`，并返回最终结果(state 值的一部分)。
+
+因此，我们可以这样获取 store 中的 counter 值:
+
+```javascript
+const count = useSelector(selectCount)
+```
+
+我们不仅可以调用其他文件引出的 selector 函数，也可以将内联 selector 函数传给 `useSelector` 作为参数:
+
+```javascript
+const countPlusTwo = useSelector(state => state.counter.value + 2)
+```
+
+每次 dispatch action，Redux store 更新后，`useSelector` 将重新运行 selector 函数。如果 selector 函数返回值与之前的值不同，则 `useSelector` 会确保用最新的值重新渲染组件。
+
+### 使用 `useDispatch` 来 dispatch action
+
+如果可以访问 Redux store，就可以使用 action creator 生成的 action 传递给 dispatch，比如 `store.dispatch(increment())`。由于我们不能直接访问 store，因此就需要一定的方法来访问 `dispatch` 方法。
+
+`useDispatch` hook 就是我们需要的，这个函数为我们取到了 Redux store 的 `dispatch` 方法:
+
+```javascript
+const dispatch = useDispatch()
+```
+
+有了上面的这一行代码，我们就可以在用户点击按钮时 dispatch action:
+
+```javascript
+{/* features/counter/Counter.js */}
+
+<button
+  className={styles.button}
+  aria-label="Increment value"
+  onClick={() => dispatch(increment())}
+\>
+  +
+</button>
+```
+
+## 组件 state 和 form
+
+现在你可能会感到疑惑:"我需要总是把所有的应用 state 放到 Redux store 中去吗?"
+
+答案是**不**。**需要贯穿应用的全局变量应该放到 Redux store 中去。而仅需要在一处使用的 state，则应该放到组件 state 中。**
+
+在下面的例子中，有个输入文本框，用户可以键入的要加给 counter 的增量值:
+
+```javascript
+{/* features/counter/Counter.js */}
+
+const [incrementAmount, setIncrementAmount] = useState('2')
+// later
+return (
+  <div className={styles.row}>
+    <input
+      className={styles.textbox}
+      aria-label="Set increment amount"
+      value={incrementAmount}
+      onChange={e => setIncrementAmount(e.target.value)}
+    />
+    <button
+      className={styles.button}
+      onClick={() => dispatch(incrementByAmount(Number(incrementAmount) || 0))}
+    \>
+      Add Amount
+    </button>
+    <button
+      className={styles.asyncButton}
+      onClick={() => dispatch(incrementAsync(Number(incrementAmount) || 0))}
+    \>
+      Add Async
+    </button>
+  </div>
+)
+```
 
 
 
 
 
-Like with the earlier plain React example, we have a function component called `Counter`, that stores some data in a `useState` hook.
 
-However, in our component, it doesn't look like we're storing the actual current counter value as state. There *is* a variable called `count`, but it's not coming from a `useState` hook.
 
-While React includes several built-in hooks like `useState` and `useEffect`, other libraries can create their own [custom hooks](https://reactjs.org/docs/hooks-custom.html) that use React's hooks to build custom logic.
 
-The [React-Redux library](https://react-redux.js.org/) has [a set of custom hooks that allow your React component to interact with a Redux store](https://react-redux.js.org/api/hooks).
 
-#### 
+
+
+We *could* keep the current number string in the Redux store, by dispatching an action in the input's `onChange` handler and keeping it in our reducer. But, that doesn't give us any benefit. The only place that text string is used is here, in the `<Counter>` component. (Sure, there's only one other component in this example: `<App>`. But even if we had a larger application with many components, only `<Counter>` cares about this input value.)
+
+So, it makes sense to keep that value in a `useState` hook here in the `<Counter>` component.
+
+Similarly, if we had a boolean flag called `isDropdownOpen`, no other components in the app would care about that - it should really stay local to this component.
+
+**In a React + Redux app, your global state should go in the Redux store, and your local state should stay in React components.**
+
+If you're not sure where to put something, here are some common rules of thumb for determining what kind of data should be put into Redux:
+
+- Do other parts of the application care about this data?
+- Do you need to be able to create further derived data based on this original data?
+- Is the same data being used to drive multiple components?
+- Is there value to you in being able to restore this state to a given point in time (ie, time travel debugging)?
+- Do you want to cache the data (ie, use what's in state if it's already there instead of re-requesting it)?
+- Do you want to keep this data consistent while hot-reloading UI components (which may lose their internal state when swapped)?
+
+This is also a good example of how to think about forms in Redux in general. **Most form state probably shouldn't be kept in Redux.** Instead, keep the data in your form components as you're editing it, and then dispatch Redux actions to update the store when the user is done.
+
+One other thing to note before we move on: remember that `incrementAsync` thunk from `counterSlice.js`? We're using it here in this component. Notice that we use it the same way we dispatch the other normal action creators. This component doesn't care whether we're dispatching a normal action or starting some async logic. It only knows that when you click that button, it dispatches something.
