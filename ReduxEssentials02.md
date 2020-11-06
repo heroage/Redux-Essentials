@@ -577,7 +577,7 @@ return (
 
 通常，考虑下 Redux 表单的情况，也是个不错参照。**多数表单 state 或许不应该放到 Redux 中**。相反，应该在编辑时，应该将这些数据保存在表单组件中，当编辑完成后，通过 dispatch action 来更新 store。
 
-还需要注意的一点是，还记得之前`counterSlice.js`的 thunk 函数`incrementAsync`吗？上面的`<Counter>`组件使用这个异步 action creator 的方式与使用其他普通哦你的 action creator 没什么不同。组件根本不关心 dispatch 了一个普通的 action，还是一个异步逻辑。组建只知道点击按钮时，就会去 dispatch action。
+还需要注意的一点是，还记得之前`counterSlice.js`的 thunk 函数`incrementAsync`吗？上面的`<Counter>`组件使用这个异步 action creator 的方式与使用其他普通的 action creator 没什么不同。组件根本不关心 dispatch 了一个普通的 action，还是一个异步逻辑。组件只知道点击按钮时，就去 dispatch 点啥。
 
 
 
