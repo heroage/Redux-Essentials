@@ -355,34 +355,34 @@ const fetchUserById = userId => {
 > 我们知道，reducer 中不能有任何形式的异步逻辑。但有时又必须需要调用异步逻辑。  
 > 如果可以访问 Redux store，这样通过异步方式调用 store.dispatch():  
 
-	```javascript
-	const store = configureStore({ reducer: counterReducer })
-	
-	setTimeout(() => {
-	  store.dispatch(increment())
-	}, 250)
-	```
-	
-	但在真实的Redux 应用中，是不允许把 store 引入到其他文件中的，尤其不能在 React 组建文件中引入 store。因为这样，会造成代码更难以测试和复用。
-	
-	另外，常常还需要为某些 store 写些异步逻辑，如果运行将 store 引入到其他文件中，最终根本没法分清引用的是哪个 store。
-	
-	Redux store 可以用"中间件"拓展，中间件是一种可以加入额外功能的 add-on 或插件。使用中间件最常见的原因就是，需要在代码中使用异步逻辑的同时，还能跟 store 继续通信。中间件的使用还可以改变 store，使其调用 `dispatch()` 时，不仅可以以普通的 action 对象为参数，还可以使用函数或是 Promise 作为参数。
-	
-	Redux Thunk 中间件通过修改 store 后，就可以将函数传给 `dispatch`。实际上，这个中间件真的很短，直接贴在下面:
-	
-	```javascript
-	const thunkMiddleware = ({ dispatch, getState }) => next => action => {
-	  if (typeof action === 'function') {
-	    return action(dispatch, getState, extraArgument)
-	  }
-	  return next(action)
-	}
-	```
-	
-	中间件会检查传给 dispatch 的 "action" 是函数还是一个普通对象。如果是函数，则调用该函数，并返回结果。否则，认为 action 参数是一个 action 对象，就继续将其向前传递给 store。
-	
-	这为我们提供了一种编写任何同步或异步代码的方法，而同时仍然可以访问 `dispatch` 和 `getState`。
+```javascript
+const store = configureStore({ reducer: counterReducer })
+
+setTimeout(() => {
+  store.dispatch(increment())
+}, 250)
+```
+
+但在真实的Redux 应用中，是不允许把 store 引入到其他文件中的，尤其不能在 React 组建文件中引入 store。因为这样，会造成代码更难以测试和复用。
+
+另外，常常还需要为某些 store 写些异步逻辑，如果运行将 store 引入到其他文件中，最终根本没法分清引用的是哪个 store。
+
+Redux store 可以用"中间件"拓展，中间件是一种可以加入额外功能的 add-on 或插件。使用中间件最常见的原因就是，需要在代码中使用异步逻辑的同时，还能跟 store 继续通信。中间件的使用还可以改变 store，使其调用 `dispatch()` 时，不仅可以以普通的 action 对象为参数，还可以使用函数或是 Promise 作为参数。
+
+Redux Thunk 中间件通过修改 store 后，就可以将函数传给 `dispatch`。实际上，这个中间件真的很短，直接贴在下面:
+
+```javascript
+const thunkMiddleware = ({ dispatch, getState }) => next => action => {
+  if (typeof action === 'function') {
+    return action(dispatch, getState, extraArgument)
+  }
+  return next(action)
+}
+```
+
+中间件会检查传给 dispatch 的 "action" 是函数还是一个普通对象。如果是函数，则调用该函数，并返回结果。否则，认为 action 参数是一个 action 对象，就继续将其向前传递给 store。
+
+这为我们提供了一种编写任何同步或异步代码的方法，而同时仍然可以访问 `dispatch` 和 `getState`。
 
 这个文件(counterSlice.js)中还有一个函数没有讲到，等到研究 `<Counter>` UI 组件时，再顺带说一句就行。
 
@@ -556,32 +556,34 @@ return (
 )
 ```
 
+我们可以把当前数字字符串存放在 Redux store 中，然后在`onChange`事件中 dispatch action，并将其保存到我们的 reducer 中。但这样做没有任何好处。因为这个数字字符串只会在 `<Counter>` 组件中使用一次。(当然，看起来`<App>`也只使用过一次。但即使即使应用变大，使用的组件更多，`<Counter>`也只会关心这个输入值而已。)
+
+因此，把这个值放到`<counter>`组件的`useState`的 hook 中更合适。
+
+类似的情况，如果我们有一个名为 `isDropdownOpen`的布尔标记值，而应用中的其他组件都与其无关，那这个值就应该作为组件的本地 state。
+
+**在 React + Redux 应用中，全局 state 应该放到 Redux store 中去，而本地 state 则应放到 React 组件中。**
+
+如果真的不知道 state 该往哪里放，下面是一些常见的经验法则，可以确定什么类型的数据应当放到 Redux 中:
+
+- 应用的其他部分关心这份数据吗
+- 以后需要创建基于这份原始数据的派生数据吗？
+- 同一份数据需要在多个组件中使用吗？
+- 需要根据给定的时间点的值恢复 state 吗(比如 time travel debugging)？
+- 需要缓存数据吗(例如直接使用 state 值，而不必重新请求)？
+- 是否需要确保在 hot-reloading(可能在交替过程中丢失内部状态) UI 组件时保持数据一致性？
+
+> 热加载(Hot Reload)的思想是运行时动态注入修改后的文件内容，同时不中断应用的正常运行。这样，我们就不会丢失应用的任何状态信息，尤其是 UI 页面栈相关的。
+
+通常，考虑下 Redux 表单的情况，也是个不错参照。**多数表单 state 或许不应该放到 Redux 中**。相反，应该在编辑时，应该将这些数据保存在表单组件中，当编辑完成后，通过 dispatch action 来更新 store。
+
+还需要注意的一点是，还记得之前`counterSlice.js`的 thunk 函数`incrementAsync`吗？上面的`<Counter>`组件使用这个异步 action creator 的方式与使用其他普通哦你的 action creator 没什么不同。组件根本不关心 dispatch 了一个普通的 action，还是一个异步逻辑。组建只知道点击按钮时，就会去 dispatch action。
 
 
 
 
 
 
-
-
-
-
-We *could* keep the current number string in the Redux store, by dispatching an action in the input's `onChange` handler and keeping it in our reducer. But, that doesn't give us any benefit. The only place that text string is used is here, in the `<Counter>` component. (Sure, there's only one other component in this example: `<App>`. But even if we had a larger application with many components, only `<Counter>` cares about this input value.)
-
-So, it makes sense to keep that value in a `useState` hook here in the `<Counter>` component.
-
-Similarly, if we had a boolean flag called `isDropdownOpen`, no other components in the app would care about that - it should really stay local to this component.
-
-**In a React + Redux app, your global state should go in the Redux store, and your local state should stay in React components.**
-
-If you're not sure where to put something, here are some common rules of thumb for determining what kind of data should be put into Redux:
-
-- Do other parts of the application care about this data?
-- Do you need to be able to create further derived data based on this original data?
-- Is the same data being used to drive multiple components?
-- Is there value to you in being able to restore this state to a given point in time (ie, time travel debugging)?
-- Do you want to cache the data (ie, use what's in state if it's already there instead of re-requesting it)?
-- Do you want to keep this data consistent while hot-reloading UI components (which may lose their internal state when swapped)?
 
 This is also a good example of how to think about forms in Redux in general. **Most form state probably shouldn't be kept in Redux.** Instead, keep the data in your form components as you're editing it, and then dispatch Redux actions to update the store when the user is done.
 
